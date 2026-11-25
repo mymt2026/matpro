@@ -1,0 +1,234 @@
+
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MATpro Movie Banner</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent;
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.backdrop {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 200ms ease-in-out;
+}
+
+.backdrop.active {
+    opacity: 1;
+}
+
+.gradient {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(
+            90deg,
+            rgba(0,0,0,0.90) 0%,
+            rgba(0,0,0,0.55) 35%,
+            transparent 80%
+        ),
+        linear-gradient(
+            0deg,
+            rgba(0,0,0,0.85),
+            transparent 45%
+        );
+}
+
+.info {
+    position: absolute;
+    left: 5%;
+    top: 34%;
+    width: 65%;
+    transition: opacity 200ms ease-in-out;
+}
+
+.title {
+    font-size: 3.5vw;
+    font-weight: bold;
+    text-transform: uppercase;
+    line-height: 1.15;
+    margin-bottom: 15px;
+    text-shadow: 2px 2px 8px black;
+}
+
+.metadata {
+    font-size: 1.4vw;
+    color: #eeeeee;
+    margin-bottom: 14px;
+}
+
+.stars {
+    color: #ffc107;
+    font-size: 2vw;
+    letter-spacing: 3px;
+}
+
+.rating {
+    color: white;
+    font-size: 1.4vw;
+    margin-left: 12px;
+}
+
+.credit {
+    position: absolute;
+    right: 2%;
+    bottom: 2%;
+    font-size: 0.9vw;
+    color: #cccccc;
+    max-width: 45%;
+    text-align: right;
+}
+
+.credit img {
+    width: 6vw;
+    display: block;
+    margin-left: auto;
+    margin-bottom: 5px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="bg1" class="backdrop"></div>
+<div id="bg2" class="backdrop"></div>
+
+<div class="gradient"></div>
+
+<div class="info" id="info">
+    <div class="title" id="title"></div>
+    <div class="metadata" id="metadata"></div>
+
+    <div>
+        <span class="stars" id="stars"></span>
+        <span class="rating" id="rating"></span>
+    </div>
+</div>
+
+<div class="credit">
+    <img
+        src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_short-7b97f8d5bfe2f2b0ed7c4b8c9d45e2f7.svg"
+        alt="TMDB"
+        onerror="this.style.display='none'"
+    >
+    This product uses the TMDB API but is not endorsed or certified by TMDB.
+</div>
+
+<script>
+var movies = [];
+var index = 0;
+var active = 0;
+var interval = 9000;
+
+var backgrounds = [
+    document.getElementById("bg1"),
+    document.getElementById("bg2")
+];
+
+function showMovie() {
+    if (!movies.length) return;
+
+    var movie = movies[index];
+    var next = 1 - active;
+    var image = new Image();
+
+    image.onload = function() {
+
+        backgrounds[next].style.backgroundImage =
+            'url("' + movie.backdrop + '")';
+
+        backgrounds[next].classList.add("active");
+        backgrounds[active].classList.remove("active");
+
+        active = next;
+
+        document.getElementById("title").textContent =
+            movie.title +
+            (movie.year ? " (" + movie.year + ")" : "");
+
+        var details = [];
+
+        if (movie.genres && movie.genres.length) {
+            details.push(movie.genres.join(" / "));
+        }
+
+        if (movie.runtime) {
+            details.push(movie.runtime + " min");
+        }
+
+        document.getElementById("metadata").textContent =
+            details.join("  |  ");
+
+        var score = Number(movie.rating) || 0;
+        var stars = Math.max(
+            0, Math.min(5, Math.round(score / 2))
+        );
+
+        document.getElementById("stars").textContent =
+            "★".repeat(stars) +
+            "☆".repeat(5 - stars);
+
+        document.getElementById("rating").textContent =
+            score.toFixed(1) + " / 10";
+
+        index = (index + 1) % movies.length;
+
+        setTimeout(showMovie, interval);
+    };
+
+    image.onerror = function() {
+        index = (index + 1) % movies.length;
+        setTimeout(showMovie, 1000);
+    };
+
+    image.src = movie.backdrop;
+}
+
+function loadMovies() {
+    fetch("movies.json", { cache: "no-store" })
+        .then(function(response) {
+            if (!response.ok) {
+                throw new Error("Catalog unavailable");
+            }
+            return response.json();
+        })
+        .then(function(data) {
+            movies = data.movies || [];
+
+            if (!movies.length) {
+                throw new Error("Empty catalog");
+            }
+
+            index = Math.floor(
+                Math.random() * movies.length
+            );
+
+            showMovie();
+        })
+        .catch(function() {
+            setTimeout(loadMovies, 10000);
+        });
+}
+
+loadMovies();
+</script>
+
+</body>
+</html>
