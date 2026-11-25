@@ -3,7 +3,7 @@ import os
 import json
 import time
 from pathlib import Path
-from urllib.request import urlopen
+from urllib.request import urlopenfor page in range(1, 1
 from urllib.parse import urlencode
 from datetime import datetime, timezone
 
@@ -25,7 +25,7 @@ def tmdb(endpoint, **params):
 movies = []
 seen = set()
 
-for page in range(1, 16):
+for page in range(1, 6):
     results = tmdb(
         "discover/movie",
         language="es-MX",
