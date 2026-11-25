@@ -1,9 +1,8 @@
-
 import os
 import json
 import time
 from pathlib import Path
-from urllib.request import urlopenfor page in range(1, 1
+from urllib.request import urlopen
 from urllib.parse import urlencode
 from datetime import datetime, timezone
 
@@ -18,9 +17,7 @@ def tmdb(endpoint, **params):
         with urlopen(url, timeout=30) as response:
             return json.load(response)
     except Exception:
-        raise RuntimeError(
-            f"Error consultando TMDB: {endpoint}"
-        ) from None
+        raise RuntimeError(f"Error consultando TMDB: {endpoint}") from None
 
 movies = []
 seen = set()
@@ -51,42 +48,28 @@ for page in range(1, 6):
             append_to_response="translations"
         )
 
-        translations = data.get(
-            "translations", {}
-        ).get("translations", [])
-
+        translations = data.get("translations", {}).get("translations", [])
         title = ""
 
-        for language, country in [
-            ("es", "MX"),
-            ("en", "US")
-        ]:
+        for language, country in [("es", "MX"), ("en", "US")]:
             for translation in translations:
                 if (
                     translation.get("iso_639_1") == language
                     and translation.get("iso_3166_1") == country
                 ):
-                    title = (
-                        translation.get("data", {}).get("title")
-                        or ""
-                    ).strip()
-
+                    title = (translation.get("data", {}).get("title") or "").strip()
                     if title:
                         break
-
             if title:
                 break
 
         if not title:
-            english = tmdb(
-                f"movie/{movie_id}",
-                language="en-US"
-            )
+            english = tmdb(f"movie/{movie_id}", language="en-US")
             title = english.get("title")
 
         title = title or data.get("original_title")
-
         backdrop = data.get("backdrop_path")
+
         if not backdrop:
             continue
 
@@ -95,9 +78,7 @@ for page in range(1, 6):
             "title": title,
             "year": (data.get("release_date") or "")[:4],
             "release_date": data.get("release_date") or "",
-            "genres": [
-                g["name"] for g in data.get("genres", [])
-            ],
+            "genres": [g["name"] for g in data.get("genres", [])],
             "runtime": data.get("runtime") or 0,
             "rating": round(data.get("vote_average") or 0, 1),
             "overview": data.get("overview") or "",
